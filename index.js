@@ -1,102 +1,59 @@
-const puppeteer = require("puppeteer");
+// module
 const fs = require("fs");
+const { launchBrowser } = require("./utils/browser");
+const { handleDialog, handleResponse, handleConsole } = require("./utils/pageUtils");
+const { takeScreenshots } = require("./utils/screenshot");
+const { checkLinks } = require("./utils/linkChecker");
 
-async function captureScreenshots(url, resolutions) {
-  const browser = await puppeteer.launch();
-
+async function process(url, sizes) {
+  const browser = await launchBrowser();
   const page = await browser.newPage();
 
-  page.on("dialog", async (dialog) => {
-    await dialog.accept();
-  });
+  await handleDialog(page);
+  await handleResponse(page, url);
 
-  // 監聽響應事件，檢查轉跳的網址是否包含 "secure"
-  page.on("response", async (response) => {
-    const redirectUrl = response.headers().location;
-    if (redirectUrl && redirectUrl.includes("secure")) {
-      await page.waitForSelector("#ansList > div:nth-child(1)");
-      await page.click("#ansList > div:nth-child(1)");
-    }
-  });
-
+  const consoleLog = [];
+  await handleConsole(page, consoleLog);
+  
+  // 前往網址
+  console.log("第一次進入網站");
   await page.goto(url, { waitUntil: "networkidle0" });
 
   // 重新整理一次
-  await page.reload({ waitUntil: "networkidle0" });
-
-  // 取得所有 a link href 取篩選掉包含 # 及空的 href，並檢查是否為 response 404.
-  const links = await page.$$eval("a", (as) =>
-    as
-      .map((a) => {
-        return a.href;
-      })
-      .filter(
-        (link) =>
-          link != "" &&
-          !link.includes("javascript") &&
-          !link.includes("mailto:") &&
-          !link.includes("tel:") &&
-          !link.includes("#")
-      )
-  );
-
-  // 去除重複的連結
-  const newLinks = [...new Set(links)];
-
-  const alreadyCheckLinks = [];
-  const errorLinks = [];
-
-  for (const link of newLinks) {
-    if (alreadyCheckLinks.includes(link)) {
-      continue;
-    }
-
-    const response = await page.goto(link, { waitUntil: "networkidle0" });
-    if (response.status() === 404) {
-      console.log(`❌404: ${link}`);
-      errorLinks.push(link);
-    }
-
-    console.log(`✅200: ${link}`)
-    alreadyCheckLinks.push(link);
-  }
-
-  // 將錯誤的連結寫入檔案
-  fs.writeFileSync("errorLinks.txt", errorLinks.join("\n"));
-
   await page.goto(url, { waitUntil: "networkidle0" });
+  console.log("已重新整理一次");
 
-  // 滾動到最下方
-  await page.evaluate(() => {
-    window.scrollTo(0, document.body.scrollHeight, { behavior: "smooth" });
+  // 檢查連結是否正確
+  const errorLinks = await checkLinks(page, url);
+
+  // 截圖
+  console.log('開始進行截圖');
+  await takeScreenshots(page, sizes);
+
+  // 回傳執行 js getCopy() 的結果
+  const copyResult = await page.evaluate(() => {
+    return getCopy ? getCopy() : 'getCopy() not found';
   });
 
-  // 滾動到最上方
-  await page.evaluate(() => {
-    window.scrollTo(0, 0, { behavior: "smooth" });
-  });
+  console.log("檢查結束");
+  console.log("=====================================");
 
-  await page.waitForTimeout(5000);
-
-  for (const resolution of resolutions) {
-    const [width, height] = resolution.split("x");
-    await page.setViewport({
-      width: parseInt(width, 10),
-      height: parseInt(height, 10),
-    });
-
-    await page.waitForTimeout(2000);
-
-    const screenshotPath = `screenshot_${resolution}.png`;
-    await page.screenshot({ path: screenshotPath, fullPage: true });
-    console.log(`Screenshot captured for ${resolution} at ${screenshotPath}`);
+  if (errorLinks.length > 0) {
+    fs.writeFileSync("errorLinks.txt", errorLinks.join("\n"));
+    console.log(`* 錯誤連結檢查結果： 錯誤連結有 ${errorLinks.length} 個，並已寫入 errorLinks.txt`);
+  } else {
+    console.log("* 錯誤連結檢查結果： 沒有錯誤連結");
   }
 
+  console.log(`* console.log 檢查結果： 共有 ${consoleLog.length} 個 console.log`);
+  console.log(`* getCopy() 檢查結果： ${copyResult}`);
+
+  // 關閉瀏覽器
   await browser.close();
 }
 
-const url = "https://ibestpark2.ito.tw/poly_star/";
-const resolutions = [
+const url = "https://ibestpark2.ito.tw/csfmtw";
+const sizes = [
   "1920x1080",
   "1680x1050",
   "1536x864",
@@ -106,4 +63,4 @@ const resolutions = [
   "768x1024",
 ];
 
-captureScreenshots(url, resolutions);
+process(url, sizes);

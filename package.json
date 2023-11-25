@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "progress": "^2.0.3",
     "puppeteer": "^21.5.2"
   }
 }
