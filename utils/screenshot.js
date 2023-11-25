@@ -5,6 +5,9 @@ async function takeScreenshots(page, sizes) {
     total: sizes.length,
   });
 
+  let alreadyShot = 0;
+  size.push(size[0]);
+  
   for (const size of sizes) {
     const [width, height] = size.split("x");
     await page.setViewport({
@@ -13,8 +16,13 @@ async function takeScreenshots(page, sizes) {
     });
     await page.waitForTimeout(2000);
     const screenshotPath = `screenshot_${size}.png`;
-    await page.screenshot({ path: screenshotPath, fullPage: true });
-    screenshotBar.tick();
+
+    if(alreadyShot > 0){
+      await page.screenshot({ path: screenshotPath, fullPage: true });
+      screenshotBar.tick();
+    }
+
+    alreadyShot++;
   }
 }
 
