@@ -6,7 +6,7 @@ async function takeScreenshots(page, sizes) {
   });
 
   let alreadyShot = 0;
-  size.push(size[0]);
+  sizes.push(sizes[0]);
   
   for (const size of sizes) {
     const [width, height] = size.split("x");
