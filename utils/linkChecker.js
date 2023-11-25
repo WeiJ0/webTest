@@ -1,6 +1,6 @@
 const ProgressBar = require("progress");
 
-async function checkLinks(page, url) {
+async function checkLinks(page, page2, url) {
   // 取得非錨點以及連結的網址
   let links = await page.$$eval("a", (as) =>
     as
@@ -30,20 +30,40 @@ async function checkLinks(page, url) {
   const errorLinks = [];
 
   for (const link of uniqueLinks) {
-    const status = await page.evaluate(async (url) => {
-      try {
-        const response = await fetch(url);
-        return response.status;
-      } catch (error) {
-        return null;
-      }
-    }, link);
+    let response;
+    try {
+      response = await page2.goto(link, {
+        waitUntil: "networkidle0",
+        timeout: 5000,
+      });
+    } catch (e) {
+      console.log(e);
+    }
 
-    if ((status && status.toString().startsWith("4")) || !status)
+    if (!response) {
       errorLinks.push(link);
+    }
+
+    // const status = await page.evaluate(async (url) => {
+    //   try {
+    //     const response = await fetch(url);
+    //     return response.status;
+    //   } catch (error) {
+    //     console.log(error);
+    //     return 500;
+    //   }
+    // }, link);
+
+    // if (
+    //   (status &&
+    //     (status.toString().startsWith("4") ||
+    //       status.toString().startsWith("5"))) ||
+    //   !status
+    // )
+    //   errorLinks.push(link);
 
     checkLinkBar.tick();
-  }
+  } 
 
   return errorLinks;
 }
