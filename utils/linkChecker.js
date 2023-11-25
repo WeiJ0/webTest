@@ -1,5 +1,17 @@
 const ProgressBar = require("progress");
 
+
+/**
+ * @description 檢查網站的連結是否正常
+ * @date 2023/11/26 - 上午2:05:00
+ * @author Aiden
+ *
+ * @async
+ * @param {*} page puppeteer page
+ * @param {*} page2 puppeteer page
+ * @param {*} url 專案網址，用來排除網址
+ * @returns {Array} 錯誤的連結
+ */
 async function checkLinks(page, page2, url) {
   // 取得非錨點以及連結的網址
   let links = await page.$$eval("a", (as) =>
@@ -37,7 +49,7 @@ async function checkLinks(page, page2, url) {
         timeout: 5000,
       });
     } catch (e) {
-      console.log(e);
+      //console.log(e);
     }
 
     if (!response) {

@@ -12,7 +12,7 @@ async function process(url, sizes) {
   const testPage = await browser.newPage();
 
   await handleDialog(page);
-  await handleResponse(page, url);
+  await handleResponse(page);
 
   const consoleLog = [];
   await handleConsole(page, consoleLog);
@@ -20,7 +20,7 @@ async function process(url, sizes) {
   console.log("=====================================");
   console.log("任務開始，網址：", url);
 
-  // 設定 cookie
+  // 設定 cookie，避免驗證
   await page.setCookie({
     name: 'temporaryVerifyCode',
     value: 'ok',
