@@ -29,9 +29,9 @@ async function takeScreenshots(page, sizes) {
     });
     await page.waitForTimeout(2000);
     const screenshotPath = `screenshot_${size}.png`;
+    await page.screenshot({ path: screenshotPath, fullPage: true });
 
     if(alreadyShot > 0){
-      await page.screenshot({ path: screenshotPath, fullPage: true });
       screenshotBar.tick();
     }
 

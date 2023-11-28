@@ -5,6 +5,7 @@ const { launchBrowser } = require("./utils/browser");
 const { handleDialog, handleResponse, handleConsole } = require("./utils/pageUtils");
 const { takeScreenshots } = require("./utils/screenshot");
 const { checkLinks } = require("./utils/linkChecker");
+const { checkADBlocker } = require("./utils/adblockerChecker");
 
 async function process(url, sizes) {
   const browser = await launchBrowser();
@@ -30,14 +31,13 @@ async function process(url, sizes) {
   // 前往網址
   console.log("第一次進入網站");
   await page.goto(url, { waitUntil: "networkidle0" });
-
   // 重新整理一次
   await page.goto(url, { waitUntil: "networkidle0" });
   console.log("已重新整理一次");
-
+  // 檢查是否有可能被 adblocker 遮蔽的元素
+  const adBlock = await checkADBlocker(page);
   // 檢查連結是否正確
   const errorLinks = await checkLinks(page, testPage, url);
-
   // 關閉測試頁面
   await testPage.close();
   // 切換回 page 
@@ -55,25 +55,35 @@ async function process(url, sizes) {
   console.log("任務結束");
   console.log("=====================================");
 
+  if(adBlock.length > 0){
+    console.log(chalk.bgRed(`* adBlock 檢查結果： 共有 ${adBlock.length} 個可能被 adBlocker 遮蔽的元素`));
+    console.log("* 詳細資料：");
+    console.log(adBlock.join("\n"));
+  }
+  else
+    console.log(chalk.bgGreen("* adBlock 檢查結果： 沒有可能被 adBlocker 遮蔽的元素"));
+
   if (errorLinks.length > 0) {
     fs.writeFileSync("errorLinks.txt", errorLinks.join("\n"));
     console.log(chalk.bgRed(`* 錯誤連結檢查結果： 錯誤連結有 ${errorLinks.length} 個，並已寫入 errorLinks.txt`));
-  } else {
+  } else 
     console.log(chalk.bgGreen("* 錯誤連結檢查結果： 沒有錯誤連結"));
-  }
-
+  
   if(consoleLog.length > 0)
     console.log(chalk.bgRed(`* console.log 檢查結果： 共有 ${consoleLog.length} 個 console.log`));
   else
     console.log(chalk.bgGreen("* console.log 檢查結果： 沒有 console.log"));
 
-  console.log(`* getCopy() 檢查結果： ${copyResult}`);
+  if(copyResult == '2020 © Design by iBest 愛貝斯網路設計')
+    console.log(chalk.bgRed(`* copyright 檢查結果： ${copyResult}`));
+  else
+    console.log(chalk.bgGreen(`* getCopy() 檢查結果： ${copyResult}`));
 
   // 關閉瀏覽器
   await browser.close();
 }
 
-const url = "https://ibestpark2.ito.tw/gia/";
+const url = "http://192.168.20.23/2311_croslene/";
 const sizes = [
   "1920x1080",
   "1680x1050",
