@@ -55,6 +55,7 @@ async function process(url, sizes) {
   console.log("任務結束");
   console.log("=====================================");
 
+  // 輸出 adblock 檢查結果
   if(adBlock.length > 0){
     console.log(chalk.bgRed(`* adBlock 檢查結果： 共有 ${adBlock.length} 個可能被 adBlocker 遮蔽的元素`));
     console.log("* 詳細資料：");
@@ -63,21 +64,21 @@ async function process(url, sizes) {
   else
     console.log(chalk.bgGreen("* adBlock 檢查結果： 沒有可能被 adBlocker 遮蔽的元素"));
 
+  // 輸出錯誤連結檢查結果
   if (errorLinks.length > 0) {
     fs.writeFileSync("errorLinks.txt", errorLinks.join("\n"));
     console.log(chalk.bgRed(`* 錯誤連結檢查結果： 錯誤連結有 ${errorLinks.length} 個，並已寫入 errorLinks.txt`));
   } else 
     console.log(chalk.bgGreen("* 錯誤連結檢查結果： 沒有錯誤連結"));
   
+  // 輸出 console.log 檢查結果
   if(consoleLog.length > 0)
     console.log(chalk.bgRed(`* console.log 檢查結果： 共有 ${consoleLog.length} 個 console.log`));
   else
     console.log(chalk.bgGreen("* console.log 檢查結果： 沒有 console.log"));
 
-  if(copyResult == '2020 © Design by iBest 愛貝斯網路設計')
-    console.log(chalk.bgRed(`* copyright 檢查結果： ${copyResult}`));
-  else
-    console.log(chalk.bgGreen(`* getCopy() 檢查結果： ${copyResult}`));
+  // 輸出 getCopy() 檢查結果
+  console.log(`* getCopy() 檢查結果： ${copyResult}`);
 
   // 關閉瀏覽器
   await browser.close();
